@@ -34,7 +34,7 @@ const Rss = lazy(() => import('./pages/Rss'))
 
 const ParticleBackground = lazy(() => import('./components/ParticleBackground'))
 
-const DEMO_USER_KEY = 'techflow_demo_user'
+
 
 /** 路由加载时的骨架屏 fallback */
 function RouteFallback() {
@@ -82,34 +82,38 @@ function AppContent() {
   }, [addUser, updateUser])
 
   useEffect(() => {
+    let mounted = true
+
+    const syncFromSession = (sessionUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null }) => {
+      const userInfo: UserInfo = {
+        id: sessionUser.id,
+        name: (sessionUser.user_metadata?.name as string) || sessionUser.email?.split('@')[0] || 'User',
+        avatar: (sessionUser.user_metadata?.avatar as string) || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sessionUser.email}`,
+        email: sessionUser.email || '',
+        role: isAdmin(sessionUser.email || '') ? 'admin' : 'user'
+      }
+      setUser(userInfo)
+      syncUserToManager(userInfo)
+    }
+
     const checkUser = async () => {
       try {
-        if (isSupabaseConfigured && supabase) {
-          const { data: { session } } = await supabase.auth.getSession()
+        if (!isSupabaseConfigured || !supabase) {
+          if (mounted) setUser(null)
+          return
+        }
 
-          if (session?.user) {
-            const userInfo: UserInfo = {
-              id: session.user.id,
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-              avatar: session.user.user_metadata?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.email}`,
-              email: session.user.email || '',
-              role: isAdmin(session.user.email || '') ? 'admin' : 'user'
-            }
-            setUser(userInfo)
-            syncUserToManager(userInfo)
-          }
-        } else {
-          const savedUser = localStorage.getItem(DEMO_USER_KEY)
-          if (savedUser) {
-            const userInfo = JSON.parse(savedUser)
-            setUser(userInfo)
-            syncUserToManager(userInfo)
-          }
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user && mounted) {
+          syncFromSession(session.user)
+        } else if (mounted) {
+          setUser(null)
         }
       } catch (error) {
         console.error('Error checking auth:', error)
+        if (mounted) setUser(null)
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
     }
 
@@ -117,28 +121,24 @@ function AppContent() {
 
     if (!isSupabaseConfigured || !supabase) {
       setLoading(false)
-      return
+      return () => { mounted = false }
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return
         if (event === 'SIGNED_IN' && session?.user) {
-          const userInfo: UserInfo = {
-            id: session.user.id,
-            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-            avatar: session.user.user_metadata?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${session.user.email}`,
-            email: session.user.email || '',
-            role: isAdmin(session.user.email || '') ? 'admin' : 'user'
-          }
-          setUser(userInfo)
-          syncUserToManager(userInfo)
+          syncFromSession(session.user)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [syncUserToManager])
 
   useEffect(() => {
@@ -224,9 +224,6 @@ function AppContent() {
   const handleLogin = useCallback((userInfo: UserInfo) => {
     setUser(userInfo)
     syncUserToManager(userInfo)
-    if (!isSupabaseConfigured || !supabase) {
-      localStorage.setItem(DEMO_USER_KEY, JSON.stringify(userInfo))
-    }
     showToast(`欢迎回来，${userInfo.name}！`, 'success')
   }, [syncUserToManager, showToast])
 
@@ -234,7 +231,6 @@ function AppContent() {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut()
     }
-    localStorage.removeItem(DEMO_USER_KEY)
     setUser(null)
     showToast('已安全退出登录', 'info')
   }, [showToast])

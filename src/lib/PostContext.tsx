@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react'
-import { posts as initialPosts } from '../utils/mockData'
 import type { Post, Draft } from '../types'
 
 const POSTS_STORAGE_KEY = 'techflow_posts'
@@ -25,14 +24,14 @@ function loadPosts(): Post[] {
     const saved = localStorage.getItem(POSTS_STORAGE_KEY)
     if (saved) {
       const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed
       }
     }
   } catch (e) {
     console.error('Failed to load posts from localStorage:', e)
   }
-  return [...initialPosts]
+  return []
 }
 
 function loadDrafts(): Draft[] {

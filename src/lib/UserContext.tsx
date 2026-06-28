@@ -26,52 +26,7 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | null>(null)
 
-const initialUsers: ManagedUser[] = [
-  {
-    id: 'admin_1',
-    name: '管理员',
-    email: 'admin@techblog.com',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
-    role: 'admin',
-    status: 'active',
-    joinDate: '2026-01-01',
-    lastLogin: '2026-06-14',
-    postsCount: 0,
-  },
-  {
-    id: 'user_1',
-    name: '张明远',
-    email: 'zhangmy@techblog.com',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=zhangmy',
-    role: 'user',
-    status: 'active',
-    joinDate: '2026-05-15',
-    lastLogin: '2026-06-13',
-    postsCount: 2,
-  },
-  {
-    id: 'user_2',
-    name: '李思琪',
-    email: 'lsq@techblog.com',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=lsq',
-    role: 'user',
-    status: 'active',
-    joinDate: '2026-05-18',
-    lastLogin: '2026-06-12',
-    postsCount: 2,
-  },
-  {
-    id: 'user_3',
-    name: '王浩然',
-    email: 'whr@techblog.com',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=whr',
-    role: 'user',
-    status: 'active',
-    joinDate: '2026-05-20',
-    lastLogin: '2026-06-11',
-    postsCount: 2,
-  },
-]
+const initialUsers: ManagedUser[] = []
 
 function loadUsers(): ManagedUser[] {
   try {

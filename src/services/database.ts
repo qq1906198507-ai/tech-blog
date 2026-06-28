@@ -99,26 +99,12 @@ function readSettingApproval(): boolean {
 
 export const commentService = {
   async addComment(postId: string, userId: string, author: string, avatar: string, content: string, parentId?: string, requireApproval?: boolean): Promise<Comment> {
-    const needApproval = requireApproval ?? readSettingApproval()
-    const status: CommentStatus = needApproval ? 'pending' : 'approved'
-    const comment: Comment = {
-      id: `c${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      post_id: postId,
-      user_id: userId,
-      author,
-      avatar,
-      content,
-      parent_id: parentId || null,
-      created_at: new Date().toISOString(),
-      status
+    if (!isSupabaseConfigured || !supabase) {
+      throw new Error('Supabase 未配置，无法创建真实评论')
     }
 
-    if (!isSupabaseConfigured || !supabase) {
-      const comments = this.getLocalComments(postId)
-      comments.unshift(comment)
-      demoStorage.set(`comments_${postId}`, JSON.stringify(comments))
-      return comment
-    }
+    const needApproval = requireApproval ?? readSettingApproval()
+    const status: CommentStatus = needApproval ? 'pending' : 'approved'
 
     const { data, error } = await supabase
       .from('comments')
@@ -140,15 +126,7 @@ export const commentService = {
 
   async getComments(postId: string): Promise<Comment[]> {
     if (!isSupabaseConfigured || !supabase) {
-      const comments = this.getLocalComments(postId)
-      const visible = comments.filter(c => (c.status || 'approved') === 'approved')
-      const rootComments = visible.filter(c => !c.parent_id)
-      const replies = visible.filter(c => c.parent_id)
-
-      return rootComments.map(comment => ({
-        ...comment,
-        replies: replies.filter(r => r.parent_id === comment.id)
-      }))
+      return []
     }
 
     const { data, error } = await supabase
@@ -290,17 +268,7 @@ export const commentService = {
 export const favoriteService = {
   async toggleFavorite(postId: string, userId: string): Promise<boolean> {
     if (!isSupabaseConfigured || !supabase) {
-      const favorites = this.getLocalFavorites(userId)
-      const index = favorites.indexOf(postId)
-      if (index > -1) {
-        favorites.splice(index, 1)
-        demoStorage.set(`favorites_${userId}`, JSON.stringify(favorites))
-        return false
-      } else {
-        favorites.push(postId)
-        demoStorage.set(`favorites_${userId}`, JSON.stringify(favorites))
-        return true
-      }
+      throw new Error('Supabase 未配置，无法切换收藏')
     }
 
     const { data: existing } = await supabase
@@ -321,7 +289,7 @@ export const favoriteService = {
 
   async getUserFavorites(userId: string): Promise<string[]> {
     if (!isSupabaseConfigured || !supabase) {
-      return this.getLocalFavorites(userId)
+      return []
     }
 
     const { data } = await supabase
