@@ -49,12 +49,7 @@ export default function Profile({ user: currentUser }: ProfileProps) {
   )
 
   const totalLikes = useMemo(() => {
-    let count = 0
-    userPosts.forEach(p => {
-      const c = localStorage.getItem(`like_count_${p.id}`)
-      if (c) count += parseInt(c)
-    })
-    return count
+    return 0
   }, [userPosts])
 
   if (!profileUser) {

@@ -57,12 +57,6 @@ export default function AdminPanel({ user }: AdminPanelProps) {
   }, [settings])
 
   const COMMENTS_STORAGE_KEY = 'techflow_comments'
-  const defaultComments = [
-    { id: '1', postId: '1', postTitle: 'GPT-5 架构猜想', author: '读者A', content: '非常有深度的分析！', date: '2026-06-13' },
-    { id: '2', postId: '2', postTitle: 'RAG 2.0', author: '读者B', content: 'GraphRAG 的思路很有启发性', date: '2026-06-12' },
-    { id: '3', postId: '3', postTitle: '大模型微调实战', author: '读者C', content: '代码示例很实用，已收藏', date: '2026-06-11' },
-  ]
-
   const loadComments = () => {
     try {
       const saved = localStorage.getItem(COMMENTS_STORAGE_KEY)
@@ -73,7 +67,7 @@ export default function AdminPanel({ user }: AdminPanelProps) {
     } catch (e) {
       console.error('Failed to load comments:', e)
     }
-    return defaultComments
+    return []
   }
 
   const [commentList, setCommentList] = useState(loadComments)
